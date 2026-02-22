@@ -1,0 +1,624 @@
+/* === Reset & Base === */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --text: #1a1a2e;
+  --text-muted: #555;
+  --bg: #fafaf8;
+  --bg-box: #f0f4ff;
+  --bg-remark: #fefce8;
+  --border-box: #2563eb;
+  --border-remark: #ca8a04;
+  --accent-blue: #2563eb;
+  --accent-orange: #ea580c;
+  --accent-green: #16a34a;
+  --accent-red: #dc2626;
+  --accent-purple: #7c3aed;
+  --font-body: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --font-heading: "Palatino Linotype", Palatino, Georgia, serif;
+  --font-mono: "SF Mono", "Fira Code", monospace;
+  --max-w: 740px;
+  --max-w-wide: 900px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.72;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === Layout === */
+.container {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.wide {
+  max-width: var(--max-w-wide);
+}
+
+/* === Header === */
+header {
+  text-align: center;
+  padding: 80px 24px 48px;
+  border-bottom: 1px solid #e5e5e5;
+  margin-bottom: 48px;
+}
+
+header h1 {
+  font-family: var(--font-heading);
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+
+header .subtitle {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: 12px;
+}
+
+header .authors {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+/* === Abstract === */
+.abstract {
+  max-width: var(--max-w);
+  margin: 0 auto 48px;
+  padding: 20px 28px;
+  background: #f5f5f4;
+  border-radius: 4px;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.abstract strong {
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+  font-size: 1rem;
+}
+
+/* === TOC === */
+nav.toc {
+  max-width: var(--max-w);
+  margin: 0 auto 56px;
+  padding: 0 24px;
+}
+
+nav.toc h2 {
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+nav.toc ol {
+  padding-left: 24px;
+}
+
+nav.toc li {
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+nav.toc a {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+nav.toc a:hover {
+  text-decoration: underline;
+}
+
+/* === Sections === */
+section {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 24px 56px;
+}
+
+section h2 {
+  font-family: var(--font-heading);
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--text);
+  letter-spacing: -0.01em;
+}
+
+section h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 32px;
+  margin-bottom: 12px;
+}
+
+section p {
+  margin-bottom: 16px;
+}
+
+section p:last-child {
+  margin-bottom: 0;
+}
+
+/* === Theorem/Definition boxes === */
+.box {
+  margin: 28px 0;
+  padding: 18px 22px;
+  border-radius: 4px;
+  border-left: 4px solid var(--border-box);
+  background: var(--bg-box);
+}
+
+.box.definition {
+  border-left-color: var(--accent-purple);
+  background: #f5f0ff;
+}
+
+.box.remark {
+  border-left-color: var(--border-remark);
+  background: var(--bg-remark);
+}
+
+.box.key-idea {
+  border-left-color: var(--accent-green);
+  background: #f0fdf4;
+}
+
+.box-label {
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.box.definition .box-label {
+  color: var(--accent-purple);
+}
+
+.box .box-label {
+  color: var(--accent-blue);
+}
+
+.box.remark .box-label {
+  color: var(--border-remark);
+}
+
+.box.key-idea .box-label {
+  color: var(--accent-green);
+}
+
+.box p {
+  margin-bottom: 8px;
+  font-size: 0.97rem;
+}
+
+.box p:last-child {
+  margin-bottom: 0;
+}
+
+/* === Example mapping table === */
+.example-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+.example-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: #64748b;
+  padding: 6px 10px 6px 0;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.example-table td {
+  padding: 7px 10px 7px 0;
+  vertical-align: top;
+  border-bottom: 1px solid #f0f0ee;
+}
+
+.example-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* =============================================
+   OPTIONAL: Notation Sidebar
+   Useful for math-heavy articles with many symbols.
+   Remove this section if your article doesn't need it.
+   ============================================= */
+.page-layout {
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.page-main {
+  flex: 0 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.notation-sidebar {
+  position: fixed;
+  right: max(16px, calc((100vw - 740px) / 2 - 290px));
+  top: 24px;
+  width: 260px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 16px 18px;
+  border-radius: 8px;
+  background: #f8f8f6;
+  border: 1px solid #e2e2dd;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  z-index: 10;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.notation-sidebar h3 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e2dd;
+}
+
+.notation-sidebar table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.notation-sidebar td {
+  padding: 5px 0;
+  vertical-align: baseline;
+}
+
+.notation-sidebar td:first-child {
+  width: 70px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  padding-right: 10px;
+}
+
+.notation-sidebar td:last-child {
+  color: var(--text-muted);
+}
+
+.notation-sidebar tr + tr td {
+  border-top: 1px solid #ececea;
+}
+
+.notation-sidebar .mini-icon {
+  display: block;
+  margin-top: 4px;
+}
+
+.notation-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.notation-sidebar::-webkit-scrollbar-thumb {
+  background: #d4d4d0;
+  border-radius: 2px;
+}
+
+@media (max-width: 1200px) {
+  .notation-sidebar {
+    display: none;
+  }
+}
+/* ============= END OPTIONAL NOTATION SIDEBAR ============= */
+
+/* === Quote === */
+blockquote {
+  margin: 24px 0;
+  padding: 16px 20px 16px 24px;
+  border-left: 3px solid #d4d4d4;
+  color: var(--text-muted);
+  font-style: italic;
+  background: #fafaf9;
+  border-radius: 0 4px 4px 0;
+}
+
+blockquote cite {
+  display: block;
+  margin-top: 8px;
+  font-style: normal;
+  font-size: 0.9rem;
+  color: #888;
+}
+
+/* === Math === */
+.math-display {
+  display: block;
+  text-align: center;
+  margin: 20px 0;
+  overflow-x: auto;
+  padding: 8px 0;
+}
+
+.math-inline {
+  display: inline;
+}
+
+/* === Diagrams === */
+.diagram-container {
+  margin: 32px 0;
+  text-align: center;
+}
+
+.diagram-container.wide {
+  max-width: var(--max-w-wide);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.diagram-caption {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-top: 10px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.diagram-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 16px 0 8px;
+  flex-wrap: wrap;
+}
+
+.diagram-controls label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.diagram-controls input[type="range"] {
+  width: 200px;
+  accent-color: var(--accent-blue);
+}
+
+.diagram-controls button {
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  padding: 6px 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.diagram-controls button:hover {
+  background: #f0f0f0;
+}
+
+.diagram-controls button.active {
+  background: var(--accent-blue);
+  color: white;
+  border-color: var(--accent-blue);
+}
+
+.diagram-controls .value-display {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  min-width: 48px;
+  text-align: center;
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
+/* === SVG === */
+svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+}
+
+svg text {
+  font-family: var(--font-body);
+}
+
+.diagram-container svg {
+  overflow: visible;
+}
+
+/* === Emphasis & Links === */
+em.concept {
+  color: var(--accent-blue);
+  font-style: normal;
+  font-weight: 600;
+}
+
+strong.highlight {
+  color: var(--accent-orange);
+}
+
+a {
+  color: var(--accent-blue);
+}
+
+/* === Separator === */
+hr {
+  border: none;
+  border-top: 1px solid #e5e5e5;
+  margin: 48px 0;
+}
+
+/* === Lists === */
+section ul,
+section ol {
+  margin: 12px 0 16px 24px;
+}
+
+section li {
+  margin-bottom: 6px;
+}
+
+/* === Step indicators (for multi-step interactives) === */
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 16px 0;
+}
+
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ddd;
+  transition: background 0.2s;
+}
+
+.step-dot.active {
+  background: var(--accent-blue);
+}
+
+.step-dot.completed {
+  background: var(--accent-green);
+}
+
+/* === Two-column comparison === */
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 24px 0;
+}
+
+.comparison > div {
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid #e5e5e5;
+}
+
+.comparison .label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.comparison .old {
+  background: #fff5f5;
+  border-color: #fecaca;
+}
+
+.comparison .new {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+/* === Footer === */
+footer {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+  border-top: 1px solid #e5e5e5;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  body {
+    font-size: 16px;
+  }
+
+  header h1 {
+    font-size: 1.8rem;
+  }
+
+  section h2 {
+    font-size: 1.5rem;
+  }
+
+  .comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .diagram-controls input[type="range"] {
+    width: 150px;
+  }
+}
+
+/* === Legend items === */
+.legend {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+/* === Annotation labels in diagrams === */
+.anno {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* === Placeholder for future diagrams === */
+.diagram-placeholder {
+  margin: 32px 0;
+  padding: 48px 24px;
+  border: 2px dashed #d4d4d4;
+  border-radius: 8px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  font-style: italic;
+}
