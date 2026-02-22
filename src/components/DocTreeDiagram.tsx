@@ -1,18 +1,18 @@
 import { colors } from "../lib/colors";
 import type { Doc } from "../lib/prettyPrinter";
-import { group, concat, text, line } from "../lib/prettyPrinter";
+import { group, text } from "../lib/prettyPrinter";
 
 // Color mapping for node types
 const nodeColors: Record<string, string> = {
   text: colors.blue,
-  line: colors.green,
+  flush: colors.green,
   concat: colors.textMuted,
   choice: colors.orange,
 };
 
 const nodeLabels: Record<string, string> = {
   text: "text",
-  line: "line",
+  flush: "flush",
   concat: "<>",
   choice: "<|>",
 };
@@ -35,8 +35,10 @@ function layoutTree(doc: Doc, x: number, y: number, hSpacing: number): TreeNode 
   switch (doc.tag) {
     case "text":
       return { doc, x, y, children: [], label, color, sublabel: `"${doc.s}"` };
-    case "line":
-      return { doc, x, y, children: [], label, color, sublabel: "\\n" };
+    case "flush": {
+      const child = layoutTree(doc.doc, x, y + vSpacing, hSpacing * 0.55);
+      return { doc, x, y, children: [child], label, color };
+    }
     case "concat": {
       const n = doc.docs.length;
       const totalW = (n - 1) * hSpacing;
@@ -115,16 +117,16 @@ function renderNode(node: TreeNode): any {
 }
 
 export default function DocTreeDiagram() {
-  // Build a small example: group(a <> line <> b)
-  // = (flatten(a <> line <> b)) <|> (a <> line <> b)
-  // = (a <> " " <> b) <|> (a <> \n <> b)
-  const doc = group(concat(text("hello"), line, text("world")));
+  // Build: group(["hello", "world"]) which creates:
+  //   choice(concat("hello", " ", "world"), concat(flush("hello"), "world"))
+  // i.e., try horizontal with space, otherwise break to next line
+  const doc = group([text("hello"), text("world")], " ");
 
-  const tree = layoutTree(doc, 250, 30, 120);
+  const tree = layoutTree(doc, 300, 30, 130);
 
   return (
     <div class="diagram-container">
-      <svg viewBox="0 0 500 220" width={500} style="max-width: 100%; height: auto;">
+      <svg viewBox="0 0 600 280" width={600} style="max-width: 100%; height: auto;">
         {renderNode(tree)}
       </svg>
       <div class="legend">
@@ -142,13 +144,14 @@ export default function DocTreeDiagram() {
         </span>
         <span class="legend-item">
           <span class="legend-swatch" style={{ background: colors.green }} />
-          line
+          flush
         </span>
       </div>
       <div class="diagram-caption">
-        The Doc tree for <code>group("hello" &lt;&gt; line &lt;&gt; "world")</code>.
+        The Doc tree for <code>group(["hello", "world"])</code>.
         The top <span style={{ color: colors.orange }}>choice</span> node picks between
-        putting everything on one line (left) or breaking (right).
+        putting everything on one line (left) or breaking with a{" "}
+        <span style={{ color: colors.green }}>flush</span> (right).
       </div>
     </div>
   );

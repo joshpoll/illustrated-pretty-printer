@@ -129,14 +129,15 @@ export default function App() {
                 breaks)
               </li>
               <li>
-                <code>line</code> — a line break (or a space, when flattened onto
-                one line)
+                <code>flush(d)</code> — render <M tex="d" />, then start a new
+                line (reset cursor to column 0)
               </li>
               <li>
                 <code>
                   a &lt;&gt; b
                 </code>{" "}
-                — concatenation: lay out <M tex="a" /> then <M tex="b" />
+                — concatenation: lay out <M tex="a" /> then <M tex="b" /> (with
+                "tetris" indentation)
               </li>
               <li>
                 <code>
@@ -150,20 +151,20 @@ export default function App() {
 
           <p>
             There's also a useful shorthand:{" "}
-            <code>group(d)</code> means "try putting{" "}
-            <M tex="d" /> all on one line; if it doesn't fit, fall back to the
-            multi-line version." Formally:
+            <code>group(items)</code> means "try putting the
+            items on one line with spaces; if it doesn't fit, fall back to
+            putting each on its own line." Formally:
           </p>
 
           <M
-            tex="\texttt{group}(d) = \texttt{flatten}(d) \;\langle|\rangle\; d"
+            tex="\texttt{group}(\vec{d}) = \texttt{hsep}(\vec{d}) \;\langle|\rangle\; \texttt{vsep}(\vec{d})"
             display
           />
 
           <p>
-            where <code>flatten</code> replaces every <code>line</code> with a
-            space. The choice node is what gives the printer its power — and its
-            computational challenge.
+            where <code>hsep</code> joins with spaces and <code>vsep</code>{" "}
+            joins with flushes (line breaks). The choice node is what gives the
+            printer its power — and its computational challenge.
           </p>
 
           <p>
@@ -369,9 +370,9 @@ export default function App() {
             </li>
             <li>
               <strong>
-                <code>line</code>
+                <code>flush(d)</code>
               </strong>
-              : one candidate with <M tex="(1,\; 0,\; 0)" />
+              : measure <M tex="d" />, then add 1 to height and set lastWidth to 0
             </li>
             <li>
               <strong>

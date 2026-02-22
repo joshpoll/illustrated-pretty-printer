@@ -238,7 +238,7 @@ export default function AlgorithmStepDemo() {
 
       <div class="diagram-caption">
         Stepping through the algorithm on{" "}
-        <code>group("a" &lt;&gt; line &lt;&gt; group("b" &lt;&gt; line &lt;&gt; "c"))</code>.
+        <code>group(["a", group(["b", "c"])])</code>.
         At each step, candidates are generated and then pruned to the Pareto frontier
         (<span style={{ color: colors.green, "font-weight": "600" }}>green</span> = survives,
         faded = dominated).

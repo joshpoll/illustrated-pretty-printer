@@ -1,10 +1,14 @@
 // Pretty printer algorithm based on Bernardy's "A Pretty But Not Greedy Printer"
 // Simplified for pedagogical purposes — focuses on core Pareto frontier idea.
+//
+// Key structural choice: uses Flush(doc) instead of a standalone Line node.
+// Flush(d) renders d then starts a new line (resets cursor to column 0).
+// This matches printiest (ammkrn/printiest) and Bernardy's original design.
 
 // === Document AST ===
 export type Doc =
   | { tag: "text"; s: string }
-  | { tag: "line" }
+  | { tag: "flush"; doc: Doc } // render doc, then newline (cursor → column 0)
   | { tag: "concat"; docs: Doc[] }
   | { tag: "choice"; a: Doc; b: Doc };
 
@@ -23,10 +27,10 @@ export interface Candidate {
 
 // === Step trace for visualization ===
 export interface AlgorithmStep {
-  label: string; // description of what's happening
-  subDoc: Doc; // the sub-document being measured
-  candidatesBefore: Candidate[]; // candidates before Pareto pruning
-  candidatesAfter: Candidate[]; // candidates after Pareto pruning (the frontier)
+  label: string;
+  subDoc: Doc;
+  candidatesBefore: Candidate[];
+  candidatesAfter: Candidate[];
 }
 
 // === Dominance ===
@@ -41,10 +45,8 @@ export function dominates(a: Measure, b: Measure): boolean {
 
 // === Pareto frontier: keep only non-dominated candidates that fit within width ===
 export function pareto(candidates: Candidate[], width: number): Candidate[] {
-  // First filter out candidates that exceed the page width
   const valid = candidates.filter((c) => c.measure.maxWidth <= width);
   if (valid.length === 0) {
-    // If nothing fits, keep the narrowest candidate(s) as fallback
     return paretoFilter(candidates);
   }
   return paretoFilter(valid);
@@ -53,9 +55,7 @@ export function pareto(candidates: Candidate[], width: number): Candidate[] {
 function paretoFilter(candidates: Candidate[]): Candidate[] {
   const result: Candidate[] = [];
   for (const c of candidates) {
-    // Check if c is dominated by any existing result
     if (result.some((r) => dominates(r.measure, c.measure))) continue;
-    // Remove any existing results dominated by c
     const filtered = result.filter((r) => !dominates(c.measure, r.measure));
     result.length = 0;
     result.push(...filtered, c);
@@ -64,6 +64,12 @@ function paretoFilter(candidates: Candidate[]): Candidate[] {
 }
 
 // === Concatenation of two measures ("tetris" operation) ===
+// From the paper (p. 6:11): when concatenating two layouts, the right layout
+// starts at the cursor position (lastWidth) of the left. ALL subsequent lines
+// of the right operand are indented by lastWidth_a. Hence:
+//   height    = h_a + h_b
+//   maxWidth  = max(mw_a, lw_a + mw_b)
+//   lastWidth = lw_a + lw_b
 export function concatMeasures(a: Measure, b: Measure): Measure {
   return {
     height: a.height + b.height,
@@ -72,8 +78,12 @@ export function concatMeasures(a: Measure, b: Measure): Measure {
   };
 }
 
+// === Flush measure: render doc then newline ===
+function flushMeasure(m: Measure): Measure {
+  return { height: m.height + 1, maxWidth: m.maxWidth, lastWidth: 0 };
+}
+
 // === Core algorithm: measure a Doc, returning the Pareto frontier of candidates ===
-// Optionally collects algorithm steps for visualization.
 export function measureDoc(
   doc: Doc,
   width: number,
@@ -97,17 +107,20 @@ export function measureDoc(
       return result;
     }
 
-    case "line": {
-      const c: Candidate = {
-        measure: { height: 1, maxWidth: 0, lastWidth: 0 },
-        choices: [],
-      };
-      const result = [c];
+    case "flush": {
+      const inner = measureDoc(doc.doc, width, trace);
+      const result = pareto(
+        inner.map((c) => ({
+          measure: flushMeasure(c.measure),
+          choices: c.choices,
+        })),
+        width
+      );
       if (trace) {
         trace.push({
-          label: "line",
+          label: "flush",
           subDoc: doc,
-          candidatesBefore: result,
+          candidatesBefore: inner,
           candidatesAfter: result,
         });
       }
@@ -128,7 +141,6 @@ export function measureDoc(
       for (let i = 1; i < doc.docs.length; i++) {
         const right = measureDoc(doc.docs[i], width, trace);
 
-        // Cartesian product
         const combined: Candidate[] = [];
         for (const l of current) {
           for (const r of right) {
@@ -183,18 +195,42 @@ export function measureDoc(
   }
 }
 
+// === Tetris-style concatenation of two layouts (lists of lines) ===
+// From the paper (p. 6:8):
+//   xs <> (y : ys) = init(xs) ++ [last(xs) ++ y] ++ map (indent ++) ys
+//     where indent = replicate (length (last xs)) ' '
+// The last line of the left layout joins with the first line of the right,
+// and ALL subsequent lines of the right are indented by last-line-width of the left.
+function tetrisConcat(left: string[], right: string[]): string[] {
+  if (left.length === 0) return right;
+  if (right.length === 0) return left;
+  const init = left.slice(0, -1);
+  const lastLeft = left[left.length - 1];
+  const firstRight = right[0];
+  const restRight = right.slice(1);
+  const indent = " ".repeat(lastLeft.length);
+  return [...init, lastLeft + firstRight, ...restRight.map((l) => indent + l)];
+}
+
 // === Render: replay choices to produce a string ===
+// Renders to a list of lines (matching the paper's L = [String] representation),
+// then joins with newlines.
 export function render(doc: Doc, choices: boolean[]): string {
   let idx = 0;
 
-  function go(d: Doc): string {
+  function go(d: Doc): string[] {
     switch (d.tag) {
       case "text":
-        return d.s;
-      case "line":
-        return "\n";
-      case "concat":
-        return d.docs.map(go).join("");
+        return [d.s];
+      case "flush":
+        return [...go(d.doc), ""];
+      case "concat": {
+        let result = go(d.docs[0]);
+        for (let i = 1; i < d.docs.length; i++) {
+          result = tetrisConcat(result, go(d.docs[i]));
+        }
+        return result;
+      }
       case "choice": {
         const pick = choices[idx++];
         return go(pick ? d.a : d.b);
@@ -202,21 +238,15 @@ export function render(doc: Doc, choices: boolean[]): string {
     }
   }
 
-  return go(doc);
+  return go(doc).join("\n");
 }
 
-// === Render with indentation ===
-export function renderIndented(doc: Doc, choices: boolean[]): string {
-  const raw = render(doc, choices);
-  return raw;
-}
-
-// === Best layout: pick the candidate with smallest height, breaking ties by maxWidth ===
+// === Best layout: pick the best candidate from the Pareto frontier ===
 export function bestLayout(doc: Doc, width: number): string {
   const frontier = measureDoc(doc, width);
   if (frontier.length === 0) return "";
 
-  // Sort by height, then maxWidth, then lastWidth
+  // Sort: fewest lines first, then narrowest, then smallest lastWidth
   frontier.sort((a, b) => {
     if (a.measure.height !== b.measure.height) return a.measure.height - b.measure.height;
     if (a.measure.maxWidth !== b.measure.maxWidth)
@@ -228,11 +258,14 @@ export function bestLayout(doc: Doc, width: number): string {
 }
 
 // === Convenience constructors ===
+
 export function text(s: string): Doc {
   return { tag: "text", s };
 }
 
-export const line: Doc = { tag: "line" };
+export function flush(doc: Doc): Doc {
+  return { tag: "flush", doc };
+}
 
 export function concat(...docs: Doc[]): Doc {
   // Flatten nested concats
@@ -244,6 +277,7 @@ export function concat(...docs: Doc[]): Doc {
       flat.push(d);
     }
   }
+  if (flat.length === 0) return text("");
   if (flat.length === 1) return flat[0];
   return { tag: "concat", docs: flat };
 }
@@ -252,58 +286,106 @@ export function choice(a: Doc, b: Doc): Doc {
   return { tag: "choice", a, b };
 }
 
-export function flatten(doc: Doc): Doc {
-  switch (doc.tag) {
-    case "text":
-      return doc;
-    case "line":
-      return text(" ");
-    case "concat":
-      return { tag: "concat", docs: doc.docs.map(flatten) };
-    case "choice":
-      return flatten(doc.a); // flatten always picks the 'a' (horizontal) branch
-  }
+// Vertical concatenation: a then newline then b
+export function vConcat(a: Doc, b: Doc): Doc {
+  return concat(flush(a), b);
 }
 
-export function group(doc: Doc): Doc {
-  return choice(flatten(doc), doc);
+// Join items vertically (flush all but last, then concat)
+export function vJoin(items: Doc[]): Doc {
+  if (items.length === 0) return text("");
+  if (items.length === 1) return items[0];
+  const parts: Doc[] = items.slice(0, -1).map((d) => flush(d));
+  parts.push(items[items.length - 1]);
+  return concat(...parts);
 }
 
-// Nest: add indentation after each line break
-export function nest(indent: number, doc: Doc): Doc {
-  const pad = " ".repeat(indent);
-  function go(d: Doc): Doc {
-    switch (d.tag) {
-      case "text":
-        return d;
-      case "line":
-        return concat(line, text(pad));
-      case "concat":
-        return { tag: "concat", docs: d.docs.map(go) };
-      case "choice":
-        return { tag: "choice", a: go(d.a), b: go(d.b) };
-    }
+// Group: try laying out items horizontally (with sep), otherwise vertically.
+// This is the core "choice" construct — the printer picks whichever fits better.
+export function group(items: Doc[], sep: string = " "): Doc {
+  if (items.length === 0) return text("");
+  if (items.length === 1) return items[0];
+
+  // Horizontal: items joined by sep on one line
+  const hParts: Doc[] = [];
+  for (let i = 0; i < items.length; i++) {
+    if (i > 0) hParts.push(text(sep));
+    hParts.push(items[i]);
   }
-  return go(doc);
+  const horizontal = concat(...hParts);
+
+  // Vertical: items on separate lines
+  const vertical = vJoin(items);
+
+  return choice(horizontal, vertical);
+}
+
+// Group with indentation for vertical layout
+export function groupIndent(
+  items: { indent: number; doc: Doc }[],
+  sep: string = " "
+): Doc {
+  if (items.length === 0) return text("");
+  if (items.length === 1) return items[0].doc;
+
+  // Horizontal: all items on one line with sep
+  const hParts: Doc[] = [];
+  for (let i = 0; i < items.length; i++) {
+    if (i > 0) hParts.push(text(sep));
+    hParts.push(items[i].doc);
+  }
+  const horizontal = concat(...hParts);
+
+  // Vertical: items on separate lines with indentation
+  const vLines: Doc[] = items.map(({ indent, doc }) =>
+    indent > 0 ? concat(text(" ".repeat(indent)), doc) : doc
+  );
+  const vertical = vJoin(vLines);
+
+  return choice(horizontal, vertical);
+}
+
+// Hang: if everything fits on one line, put it there;
+// otherwise put lower on the next line with indentation.
+export function hang(indent: number, upper: Doc, lower: Doc): Doc {
+  return groupIndent(
+    [
+      { indent: 0, doc: upper },
+      { indent, doc: lower },
+    ],
+    " "
+  );
 }
 
 // === Example documents for demos ===
 
-// Helper: intersperse a separator between items
-function intersperse(sep: Doc, items: Doc[]): Doc[] {
-  const result: Doc[] = [];
-  for (let i = 0; i < items.length; i++) {
-    if (i > 0) result.push(sep);
-    result.push(items[i]);
-  }
-  return result;
+// Build a function call like f(a, b, c) that can break across lines.
+// Tetris-style concat automatically indents args under the opening paren.
+export function funcCall(name: string, args: Doc[]): Doc {
+  if (args.length === 0) return text(name + "()");
+
+  // Attach commas to all args except the last
+  const withCommas = args.map((a, i) =>
+    i < args.length - 1 ? concat(a, text(",")) : a
+  );
+
+  // sep: horizontal (with space after comma) or vertical (commas already attached)
+  const inner = group(withCommas, " ");
+  return concat(text(name + "("), inner, text(")"));
 }
 
-// Helper: build a function call like f(a, b, c) that can break across lines
-export function funcCall(name: string, args: Doc[]): Doc {
-  const sep = concat(text(","), line);
-  const body = intersperse(sep, args);
-  return group(concat(text(name + "("), nest(name.length + 1, concat(...body)), text(")")));
+// S-expression printer (matches printiest's tests)
+export type Sexpr = { tag: "atom"; s: string } | { tag: "list"; items: Sexpr[] };
+
+export function sexprPretty(sexpr: Sexpr): Doc {
+  switch (sexpr.tag) {
+    case "atom":
+      return text(sexpr.s);
+    case "list": {
+      const inner = group(sexpr.items.map(sexprPretty), " ");
+      return concat(text("("), inner, text(")"));
+    }
+  }
 }
 
 // A simple nested expression for demos
@@ -322,13 +404,7 @@ export function exampleDoc(): Doc {
 
 // A smaller example for the algorithm step-through
 export function smallExampleDoc(): Doc {
-  return group(
-    concat(
-      text("a"),
-      line,
-      group(concat(text("b"), line, text("c")))
-    )
-  );
+  return group([text("a"), group([text("b"), text("c")], " ")], " ");
 }
 
 // Pretty-print a Doc AST for display
@@ -336,8 +412,8 @@ export function docToString(doc: Doc): string {
   switch (doc.tag) {
     case "text":
       return `"${doc.s}"`;
-    case "line":
-      return "line";
+    case "flush":
+      return `flush(${docToString(doc.doc)})`;
     case "concat":
       return doc.docs.map(docToString).join(" <> ");
     case "choice":
