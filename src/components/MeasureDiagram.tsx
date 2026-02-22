@@ -1,3 +1,4 @@
+import { createSignal, createMemo, onMount } from "solid-js";
 import { colors } from "../lib/colors";
 
 export default function MeasureDiagram() {
@@ -8,28 +9,41 @@ export default function MeasureDiagram() {
     "         p(\"world\")))",
   ];
 
-  const charW = 8.4;
+  const fontSize = 13;
+  const monoStyle = `font-family: "Fira Mono", monospace; font-size: ${fontSize}px; white-space: pre;`;
+  const [charW, setCharW] = createSignal(7.8);
+  let measureRef!: SVGTextElement;
+
+  onMount(async () => {
+    await document.fonts.ready;
+    setCharW(measureRef.getComputedTextLength() / 10);
+  });
+
   const lineH = 22;
   const padX = 40;
   const padY = 30;
   const maxLen = Math.max(...lines.map((l) => l.length));
   const lastLen = lines[lines.length - 1].length;
 
-  const svgW = maxLen * charW + padX * 2 + 80;
-  const svgH = lines.length * lineH + padY * 2 + 40;
+  const svgW = createMemo(() => maxLen * charW() + padX * 2 + 80);
+  const svgH = createMemo(() => lines.length * lineH + padY * 2 + 40);
 
   const textY = (i: number) => padY + i * lineH + 15;
 
   return (
     <div class="diagram-container">
-      <svg viewBox={`0 0 ${svgW} ${svgH}`} width={svgW} style="max-width: 100%; height: auto;">
+      <svg viewBox={`0 0 ${svgW()} ${svgH()}`} width={svgW()} style="max-width: 100%; height: auto;">
+        {/* Hidden element for measuring actual SVG character width */}
+        <text ref={measureRef} x={0} y={0} style={monoStyle} visibility="hidden">
+          MMMMMMMMMM
+        </text>
+
         {/* The text lines */}
         {lines.map((ln, i) => (
           <text
             x={padX}
             y={textY(i)}
-            font-family="var(--font-mono)"
-            font-size="13"
+            style={monoStyle}
             fill="#333"
           >
             {ln}
@@ -38,11 +52,10 @@ export default function MeasureDiagram() {
 
         {/* maxWidth bracket (horizontal, above) */}
         {(() => {
-          const widestIdx = lines.indexOf(lines.reduce((a, b) => (a.length >= b.length ? a : b)));
-          const widestLen = lines[widestIdx].length;
+          const widestLen = Math.max(...lines.map((l) => l.length));
           const y = padY - 8;
           const x1 = padX;
-          const x2 = padX + widestLen * charW;
+          const x2 = padX + widestLen * charW();
           return (
             <>
               <line x1={x1} y1={y} x2={x2} y2={y} stroke={colors.red} stroke-width={2} />
@@ -64,7 +77,7 @@ export default function MeasureDiagram() {
 
         {/* height bracket (vertical, right side) */}
         {(() => {
-          const x = padX + maxLen * charW + 20;
+          const x = padX + maxLen * charW() + 20;
           const y1 = textY(0) - 10;
           const y2 = textY(lines.length - 1) + 4;
           return (
@@ -89,7 +102,7 @@ export default function MeasureDiagram() {
         {(() => {
           const y = textY(lines.length - 1) + 12;
           const x1 = padX;
-          const x2 = padX + lastLen * charW;
+          const x2 = padX + lastLen * charW();
           return (
             <>
               <line x1={x1} y1={y} x2={x2} y2={y} stroke={colors.green} stroke-width={2} />

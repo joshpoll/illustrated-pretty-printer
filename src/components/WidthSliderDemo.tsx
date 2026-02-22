@@ -1,4 +1,4 @@
-import { createSignal, createMemo } from "solid-js";
+import { createSignal, createMemo, onMount } from "solid-js";
 import { exampleDoc, bestLayout } from "../lib/prettyPrinter";
 import { colors } from "../lib/colors";
 
@@ -9,13 +9,25 @@ export default function WidthSliderDemo() {
   const rendered = createMemo(() => bestLayout(doc, width()));
   const lines = createMemo(() => rendered().split("\n"));
 
-  // SVG dimensions
-  const charW = 8.4;
+  // Dynamically measure monospace character width using SVG text element
+  const fontSize = 13;
+  const monoStyle = `font-family: "Fira Mono", monospace; font-size: ${fontSize}px; white-space: pre;`;
+  const [charW, setCharW] = createSignal(7.8); // initial estimate for Fira Mono at 13px
   const lineH = 20;
   const padX = 16;
   const padY = 12;
+  let measureRef!: SVGTextElement;
 
-  const svgW = createMemo(() => Math.max(width() * charW + padX * 2 + 20, 400));
+  onMount(async () => {
+    await document.fonts.ready;
+    setCharW(measureRef.getComputedTextLength() / 10);
+  });
+
+  const edgeX = createMemo(() => padX + width() * charW());
+  const maxLineLen = createMemo(() => Math.max(...lines().map((l) => l.length)));
+  const svgW = createMemo(() =>
+    Math.max(edgeX() + 40, maxLineLen() * charW() + padX * 2, 400)
+  );
   const svgH = createMemo(() => lines().length * lineH + padY * 2);
 
   return (
@@ -27,38 +39,61 @@ export default function WidthSliderDemo() {
       >
         {/* Page edge line */}
         <line
-          x1={padX + width() * charW}
+          x1={edgeX()}
           y1={0}
-          x2={padX + width() * charW}
+          x2={edgeX()}
           y2={svgH()}
           stroke={colors.red}
           stroke-width={1.5}
           stroke-dasharray="6 4"
           opacity={0.6}
         />
+        {/* Hidden element for measuring actual SVG character width */}
         <text
-          x={padX + width() * charW + 4}
+          ref={measureRef}
+          x={0} y={0}
+          style={monoStyle}
+          visibility="hidden"
+        >
+          MMMMMMMMMM
+        </text>
+
+        <text
+          x={edgeX() + 4}
           y={14}
           fill={colors.red}
-          font-size="11"
-          font-family="var(--font-mono)"
+          style={`font-family: "Fira Mono", monospace; font-size: 11px;`}
           opacity={0.7}
         >
           {width()}
         </text>
 
         {/* Rendered text */}
-        {lines().map((ln, i) => (
-          <text
-            x={padX}
-            y={padY + i * lineH + 14}
-            font-family="var(--font-mono)"
-            font-size="13"
-            fill={colors.blue}
-          >
-            {ln}
-          </text>
-        ))}
+        {lines().map((ln, i) => {
+          const overflows = ln.length > width();
+          return (
+            <>
+              {overflows && (
+                <rect
+                  x={padX - 4}
+                  y={padY + i * lineH}
+                  width={ln.length * charW() + 8}
+                  height={lineH}
+                  fill="#fee2e2"
+                  rx={3}
+                />
+              )}
+              <text
+                x={padX}
+                y={padY + i * lineH + 14}
+                style={monoStyle}
+                fill={overflows ? colors.red : colors.blue}
+              >
+                {ln}
+              </text>
+            </>
+          );
+        })}
       </svg>
 
       <div class="diagram-controls">

@@ -22,7 +22,7 @@
   --accent-purple: #7c3aed;
   --font-body: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   --font-heading: "Palatino Linotype", Palatino, Georgia, serif;
-  --font-mono: "SF Mono", "Fira Code", monospace;
+  --font-mono: "Fira Mono", monospace;
   --max-w: 740px;
   --max-w-wide: 900px;
 }
