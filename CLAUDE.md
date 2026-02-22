@@ -29,6 +29,7 @@ This log is part of an experiment in human-AI collaboration on technical communi
 - **Every major concept gets a diagram or interactive** — if you can't draw it, the reader can't see it
 - **Take advantage of reference images** — user provides photos from talks and papers; match them
 - **Diagrams show, captions tell** — short name labels inside diagrams, equations and explanations in captions
+- **Use the right level of abstraction** — Abstract diagrams are extremely valuable; don't shy away from them. The power of a diagram is making abstract concepts tangible, physical, and manipulable. A schematic representation (block shapes, simplified geometry) is often more illuminating than showing only concrete data. Pick the abstraction level that best serves comprehension, and consider progressive abstraction (concrete → outlined → abstract) to bridge the gap.
 
 ### Style References
 

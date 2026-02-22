@@ -2,7 +2,7 @@ import M from "./lib/Math";
 import WidthSliderDemo from "./components/WidthSliderDemo";
 import DocTreeDiagram from "./components/DocTreeDiagram";
 import MeasureDiagram from "./components/MeasureDiagram";
-import TetrisConcatDemo from "./components/TetrisConcatDemo";
+import ConcatSchematic from "./components/ConcatSchematic";
 import ParetoFrontierDemo from "./components/ParetoFrontierDemo";
 import AlgorithmStepDemo from "./components/AlgorithmStepDemo";
 
@@ -241,7 +241,7 @@ export default function App() {
             over by the left block's last-line width.
           </p>
 
-          <TetrisConcatDemo />
+          <ConcatSchematic />
         </section>
 
         {/* ===== Section 4 ===== */}
