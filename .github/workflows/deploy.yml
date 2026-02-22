@@ -1,12 +1,9 @@
 name: Deploy to GitHub Pages
 
-# To enable automatic deployment:
-# 1. Go to repo Settings > Pages > Source > "GitHub Actions"
-# 2. Uncomment the "push" trigger below
 on:
-  workflow_dispatch: # manual trigger always available
-  # push:
-  #   branches: [main]
+  workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
