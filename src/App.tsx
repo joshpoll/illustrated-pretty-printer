@@ -4,7 +4,7 @@ import DocTreeDiagram from "./components/DocTreeDiagram";
 import MeasureDiagram from "./components/MeasureDiagram";
 import ConcatSchematic from "./components/ConcatSchematic";
 import ParetoFrontierDemo from "./components/ParetoFrontierDemo";
-import AlgorithmStepDemo from "./components/AlgorithmStepDemo";
+import ParetoTreeDemo from "./components/ParetoTreeDemo";
 
 export default function App() {
   return (
@@ -397,10 +397,10 @@ export default function App() {
           </p>
 
           <p>
-            Step through the algorithm on a small example:
+            Watch the algorithm build the frontier, node by node:
           </p>
 
-          <AlgorithmStepDemo />
+          <ParetoTreeDemo />
         </section>
 
         {/* ===== Section 7 ===== */}

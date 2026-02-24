@@ -407,6 +407,156 @@ export function smallExampleDoc(): Doc {
   return group([text("a"), group([text("b"), text("c")], " ")], " ");
 }
 
+// === Tree trace: recursive structure with frontiers at every node ===
+
+export interface TreeTraceNode {
+  id: number;
+  doc: Doc;
+  label: string;
+  children: TreeTraceNode[];
+  candidatesBefore: Candidate[];
+  frontier: Candidate[];
+  computeOrder: number;
+}
+
+let _treeTraceId = 0;
+let _treeTraceOrder = 0;
+
+export function measureDocTree(doc: Doc, width: number): TreeTraceNode {
+  _treeTraceId = 0;
+  _treeTraceOrder = 0;
+  return _measureDocTree(doc, width);
+}
+
+function _measureDocTree(doc: Doc, width: number): TreeTraceNode {
+  const id = _treeTraceId++;
+
+  switch (doc.tag) {
+    case "text": {
+      const c: Candidate = {
+        measure: { height: 0, maxWidth: doc.s.length, lastWidth: doc.s.length },
+        choices: [],
+      };
+      return {
+        id,
+        doc,
+        label: `"${doc.s}"`,
+        children: [],
+        candidatesBefore: [c],
+        frontier: [c],
+        computeOrder: _treeTraceOrder++,
+      };
+    }
+
+    case "flush": {
+      const child = _measureDocTree(doc.doc, width);
+      const mapped = child.frontier.map((c) => ({
+        measure: flushMeasure(c.measure),
+        choices: c.choices,
+      }));
+      const frontier = pareto(mapped, width);
+      return {
+        id,
+        doc,
+        label: "flush",
+        children: [child],
+        candidatesBefore: mapped,
+        frontier,
+        computeOrder: _treeTraceOrder++,
+      };
+    }
+
+    case "concat": {
+      if (doc.docs.length === 0) {
+        const c: Candidate = {
+          measure: { height: 0, maxWidth: 0, lastWidth: 0 },
+          choices: [],
+        };
+        return {
+          id,
+          doc,
+          label: "<>",
+          children: [],
+          candidatesBefore: [c],
+          frontier: [c],
+          computeOrder: _treeTraceOrder++,
+        };
+      }
+
+      const childNodes = doc.docs.map((d) => _measureDocTree(d, width));
+
+      let current = childNodes[0].frontier;
+      for (let i = 1; i < childNodes.length; i++) {
+        const right = childNodes[i].frontier;
+        const combined: Candidate[] = [];
+        for (const l of current) {
+          for (const r of right) {
+            combined.push({
+              measure: concatMeasures(l.measure, r.measure),
+              choices: [...l.choices, ...r.choices],
+            });
+          }
+        }
+        current = pareto(combined, width);
+      }
+
+      // candidatesBefore = all products before final prune
+      const allProducts: Candidate[] = [];
+      let acc = childNodes[0].frontier;
+      for (let i = 1; i < childNodes.length; i++) {
+        const right = childNodes[i].frontier;
+        const combined: Candidate[] = [];
+        for (const l of acc) {
+          for (const r of right) {
+            combined.push({
+              measure: concatMeasures(l.measure, r.measure),
+              choices: [...l.choices, ...r.choices],
+            });
+          }
+        }
+        acc = combined;
+      }
+
+      return {
+        id,
+        doc,
+        label: "<>",
+        children: childNodes,
+        candidatesBefore: acc,
+        frontier: current,
+        computeOrder: _treeTraceOrder++,
+      };
+    }
+
+    case "choice": {
+      const left = _measureDocTree(doc.a, width);
+      const right = _measureDocTree(doc.b, width);
+
+      const aCandidates = left.frontier.map((c) => ({
+        measure: c.measure,
+        choices: [true, ...c.choices],
+      }));
+      const bCandidates = right.frontier.map((c) => ({
+        measure: c.measure,
+        choices: [false, ...c.choices],
+      }));
+
+      const combined = [...aCandidates, ...bCandidates];
+      const frontier = pareto(combined, width);
+
+      return {
+        id,
+        doc,
+        label: "<|>",
+        children: [left, right],
+        candidatesBefore: combined,
+        frontier,
+        computeOrder: _treeTraceOrder++,
+      };
+    }
+  }
+}
+
 // Pretty-print a Doc AST for display
 export function docToString(doc: Doc): string {
   switch (doc.tag) {

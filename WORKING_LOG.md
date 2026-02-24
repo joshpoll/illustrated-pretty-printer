@@ -4,6 +4,37 @@ Record of significant changes, design decisions, and process notes.
 
 ---
 
+## 2026-02-22: ParetoTreeDemo — recursive frontier tree visualization
+
+### What was done
+- Created `ParetoTreeDemo` component to replace `AlgorithmStepDemo` in Section 6. Shows the algorithm building Pareto frontiers bottom-up on the document tree.
+- **Tree trace infrastructure**: Added `TreeTraceNode` type and `measureDocTree()` function to `prettyPrinter.ts`. Mirrors `measureDoc` but returns a tree annotated with frontiers and compute order at every node.
+- **Non-overlapping tree layout**: Bottom-up width computation (each leaf gets 40px, parent width = sum of children + gaps) to avoid the cramped/overlapping layout of the original fixed-spacing approach.
+- **Side-by-side layout**: Tree SVG on the left, detail panel (table + scatter plot) on the right. Prevents the jumping/reflowing that occurred when the detail panel appeared/disappeared below the tree.
+- **Detail panel**: Measure table (h, mw, lw, layout text, checkmark) + scatter plot with rendered text cards positioned at (maxWidth, height). Hover linkage between table rows and scatter cards.
+- **Grouped steps**: Batches consecutive text-leaf computations into single steps to reduce step count from 25 to ~13 meaningful steps.
+- **Notation sidebar**: Fixed-position sidebar (`.notation-sidebar` CSS class) showing measure definition, node type legend, and frontier badge explanation. Visible on wide screens (>1200px).
+- **Overlap handling**: Cards in scatter plot that share the same (maxWidth, height) are offset horizontally to avoid stacking.
+
+### Design decisions
+- **Node's own doc for render**: Intermediate nodes render `render(node.doc, c.choices)` not `render(rootDoc, c.choices)`. The choices array is scoped to the subtree, so rendering with the root doc produces wrong text.
+- **Always-present detail panel**: Uses `<Show>` with a placeholder fallback instead of conditionally mounting/unmounting, preventing layout shifts.
+- **candidatesBefore = all products before prune**: For concat nodes, this shows the cross-product before Pareto filtering, making the pruning step visible.
+
+### What worked
+- The bottom-up width computation gives clean non-overlapping layouts automatically.
+- Side-by-side layout eliminates the button jumping issue completely.
+
+### What didn't
+- First attempt used the old DocTreeDiagram layout approach (fixed hSpacing with decay factor), which caused severe overlap at lower tree levels.
+- Initially rendered all candidates with `render(rootDoc, ...)` which gave wrong text for intermediate nodes.
+
+### Open questions / future work
+- The sidebar is always visible once the component mounts — could be improved to only show when Section 6 is in the viewport.
+- Scatter plot cards for very similar measures may still be hard to distinguish; could add tooltips or click-to-expand.
+
+---
+
 ## 2026-02-22: ConcatSchematic — progressive abstraction diagram + reusable SVG arrows
 
 ### What was done
